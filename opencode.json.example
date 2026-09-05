@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "agnes-2-5-flash": {
+      "type": "local",
+      "command": ["agnes-2.5-flash-mcp"],
+      "enabled": true,
+      "environment": {
+        "AGNES_API_KEY": "YOUR_API_KEY_HERE",
+        "ALL_PROXY": "",
+        "all_proxy": ""
+      }
+    }
+  }
+}
