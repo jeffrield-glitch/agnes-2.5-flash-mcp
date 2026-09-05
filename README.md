@@ -2,6 +2,32 @@
 
 **English** | [中文](#中文说明)
 
+## 作者的话 / Why I built this
+
+前段时间接触到了 Agnes 免费的图片和视频生成模型（`agnes-image-2.5-flash` /
+`agnes-video-2.5-flash`），实测效果不错，而且免费额度很实在。
+
+但每次都要切到网页或拼脚本去调用，在 Cursor / Claude 这些工具里来回复制
+URL 实在麻烦。本着「在多个工具里调用方便」的初衷，我把常用的生图、生视频
+能力包成了这个 MCP：配好一次 Key，在任何支持 MCP 的 IDE 里一句话就能用。
+
+顺手开源出来，分享给大家使用。欢迎提 issue / PR，一起把它打磨得更好用。
+
+---
+
+I stumbled upon Agnes's free image & video models a while ago
+(`agnes-image-2.5-flash` / `agnes-video-2.5-flash`) — surprisingly good,
+and genuinely free to try.
+
+But switching to a web page or hand-rolling scripts every time, copying URLs
+back and forth between Cursor / Claude, got old fast. So I wrapped the bits
+I actually use — image + video generation — into this MCP: configure the key
+once, then just talk to your agent in any MCP-compatible IDE.
+
+Sharing it here in case it helps you too. Issues and PRs are very welcome.
+
+---
+
 > 2.5-flash-only MCP edition. If you need 2.0/2.1 or `agnes-video-v2.0`,
 > use `agnes-mcp` (MSWEIMZ) instead. This package targets only
 > `agnes-image-2.5-flash` + `agnes-video-2.5-flash` with Flash-strict validation.
@@ -153,3 +179,5 @@ Agent 会自动选工具，无需额外路由层。
 
 安装 `pip install agnes-2.5-flash-mcp`，Key 写入 MCP 配置
 `environment.AGNES_API_KEY`（见 `opencode.json.example`），重启即生效。
+
+最初就是自己用着方便做的，现在分享出来，希望对你也有用。
