@@ -1,183 +1,123 @@
-# agnes-2.5-flash-mcp — Image / Video (agnes-image/video-2.5-flash)
+# Agnes 2.5 Flash MCP Server 🚀
 
-**English** | [中文](#中文说明)
-
-## 作者的话 / Why I built this
-
-前段时间接触到了 Agnes 免费的图片和视频生成模型（`agnes-image-2.5-flash` /
-`agnes-video-2.5-flash`），实测效果不错，而且免费额度很实在。
-
-但每次都要切到网页或拼脚本去调用，在 Cursor / Claude 这些工具里来回复制
-URL 实在麻烦。本着「在多个工具里调用方便」的初衷，我把常用的生图、生视频
-能力包成了这个 MCP：配好一次 Key，在任何支持 MCP 的 IDE 里一句话就能用。
-
-顺手开源出来，分享给大家使用。欢迎提 issue / PR，一起把它打磨得更好用。
+<div align="center">
+  <p>一个 Model Context Protocol (MCP) 服务器，将 Agnes AI 最新发布的 2.5-flash 图像与视频生成模型无缝集成到您最爱的 AI IDE 中。</p>
+  <p>
+    <a href="https://pypi.org/project/agnes-2.5-flash-mcp/"><img src="https://img.shields.io/pypi/v/agnes-2.5-flash-mcp.svg" alt="PyPI version"></a>
+    <a href="https://www.python.org/downloads/release/python-3100/"><img src="https://img.shields.io/badge/Python-%E2%89%A53.10-blue.svg" alt="Python 3.10+"></a>
+    <a href="https://github.com/JasonOracle/agnes-2.5-flash-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+    <img src="https://img.shields.io/badge/Protocol-MCP_stdio-purple.svg" alt="MCP Protocol">
+  </p>
+  <p><strong>中文说明</strong> | <a href="README_en.md">English</a></p>
+</div>
 
 ---
 
-I stumbled upon Agnes's free image & video models a while ago
-(`agnes-image-2.5-flash` / `agnes-video-2.5-flash`) — surprisingly good,
-and genuinely free to try.
+## 🌟 工程亮点 (致面试官)
 
-But switching to a web page or hand-rolling scripts every time, copying URLs
-back and forth between Cursor / Claude, got old fast. So I wrapped the bits
-I actually use — image + video generation — into this MCP: configure the key
-once, then just talk to your agent in any MCP-compatible IDE.
+虽然 Agnes 提供了非常优秀的免费图像和视频生成模型（`agnes-image-2.5-flash` / `agnes-video-2.5-flash`），但开发者在 IDE 和网页之间频繁切换上下文非常打断心流。最初，这只是为了在 Opencode 中免去切网页烦恼而写的自用工具，现已正式发布至 PyPI，任何开发者均可直接安装，将 AI 生成能力一键接入自己的 Agentic IDE（如 Opencode、Claude Desktop、Windsurf 等）。
 
-Sharing it here in case it helps you too. Issues and PRs are very welcome.
+**核心技术决策与实现：**
+1. **彻底解决客户端超时痛点 (Robust Async Workflow)**：由于视频生成通常耗时数分钟，极易导致 Opencode/Claude 等 MCP 客户端的标准请求超时。为此，我设计了异步的任务轮询系统 (`create_video` → `query_video`)，允许 Agent 非阻塞地检查进度，保证了长耗时任务的稳定性。
+2. **前置强校验与防御性编程 (Strict Parameter Validation)**：在本地层面对请求参数进行 Flash 强校验（例如：强制 `720P` 分辨率，校验图文音附件数量等）。这能将无效请求在发起网络调用前瞬间拦截，既降低了网络延迟，又避免了无意义的 API 额度消耗。
+3. **自然语言无缝路由 (Intelligent Intent Routing)**：在工具描述（Description）设计中，深度优化了中英双语的触发词（如“生一张图”、“draw a cyberpunk city”）。LLM 能够根据上下文自动推断用户意图，精准路由到正确的工具函数，完全免去了繁杂的 Prompt 设定。
+4. **标准化与兼容性 (Plug-and-Play Design)**：完全遵循官方的 MCP `stdio` 传输层规范，实现即插即用，兼容市面上绝大多数支持 MCP 的智能客户端。
 
 ---
 
-> 2.5-flash-only MCP edition. If you need 2.0/2.1 or `agnes-video-v2.0`,
-> use `agnes-mcp` (MSWEIMZ) instead. This package targets only
-> `agnes-image-2.5-flash` + `agnes-video-2.5-flash` with Flash-strict validation.
->
-> 仅做 2.5-flash 专版。如需 2.0/2.1 或 v2.0，请用社区 `agnes-mcp`。
+## 🚀 支持的模型与端点
 
-Any MCP-compatible IDE works:
-Cursor / Claude Desktop / VSCode / Cline / Windsurf / Cherry Studio / Opencode.
+> **注意：** 本项目为 2.5-flash 专版。如果您需要 2.0/2.1 或 `agnes-video-v2.0` 的支持，请使用社区版的 `agnes-mcp`。
 
-Models & endpoints (see official docs):
-- Image: `POST https://apihub.agnes-ai.com/v1/images/generations`, model `agnes-image-2.5-flash`
-- Video: `POST /v1/videos` create + `GET /agnesapi?video_id=&model_name=agnes-video-2.5-flash` poll, model `agnes-video-2.5-flash` (size fixed `720P`)
+- **图像生成**: `agnes-image-2.5-flash` 模型（接口：`POST /v1/images/generations`）
+- **视频生成**: `agnes-video-2.5-flash` 模型（接口：`POST /v1/videos` & `GET /agnesapi`，尺寸固定为 `720P`）
 
-## Install / 安装
+## 📦 安装说明
 
 ```bash
+# 通过 pip 安装
 pip install agnes-2.5-flash-mcp
-# or from source:
+
+# 或从源码安装
+git clone https://github.com/JasonOracle/agnes-2.5-flash-mcp.git
+cd agnes-2.5-flash-mcp
 pip install -e .
 ```
 
-Requires Python ≥ 3.10.
+*要求 Python ≥ 3.10.*
 
-## API key / 配置 Key
+## 🔑 配置说明 (API Key)
 
-Recommended: put the key in your MCP client config (per-project or global),
-do NOT commit real keys. Priority:
-tool arg `api_key` > MCP `environment.AGNES_API_KEY` > system env > `.env` file.
+API Key 解析优先级：
+`工具调用参数` > `MCP 环境变量 AGNES_API_KEY` > `系统环境变量` > `.env` 文件。
 
-```json
-{ "mcp": { "agnes-2-5-flash": { "environment": { "AGNES_API_KEY": "YOUR_KEY" } } } }
-```
-
-Alternatives:
-
-```bash
-setx AGNES_API_KEY "YOUR_KEY"
-copy .env.example .env
-```
-
-> Proxy note: if `ALL_PROXY=socks5://...` breaks `httpx` (`socksio is not installed`),
-> keep `ALL_PROXY/all_proxy` empty in `opencode.json.example`, or use
-> `HTTP_PROXY=http://127.0.0.1:10808`, or `pip install "httpx[socks]" "httpcore[socks]"`.
-
-## Connect / 接入各 IDE (stdio)
-
-### Cursor (`.cursor/mcp.json` or global)
+**推荐方式：** 直接在您的 MCP 客户端配置中设置，避免将 Key 提交到代码库。
 
 ```json
 {
   "mcpServers": {
-    "agnes-2-5-flash": {
+    "agnes-2.5-flash-mcp": {
       "command": "agnes-2.5-flash-mcp",
       "args": [],
-      "env": { "AGNES_API_KEY": "YOUR_KEY" }
-    }
-  }
-}
-```
-
-Without install: `command: python`, `args: ["-m", "agnes_2_5_flash_mcp.server"]`,
-`cwd: "<repo>/mcps/agnes"`, `env: { "PYTHONPATH": "src" }`.
-
-### Claude Desktop (`claude_desktop_config.json`)
-
-Same as above.
-
-### Opencode (`opencode.json`, see `opencode.json.example`)
-
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "agnes-2-5-flash": {
-      "type": "local",
-      "command": ["agnes-2.5-flash-mcp"],
-      "enabled": true,
-      "environment": {
-        "AGNES_API_KEY": "YOUR_API_KEY_HERE",
-        "ALL_PROXY": "",
-        "all_proxy": ""
+      "env": {
+        "AGNES_API_KEY": "您的_API_KEY"
       }
     }
   }
 }
 ```
 
-Without install: `command: ["python", "-m", "agnes_2_5_flash_mcp.server"]`
-with `cwd` pointing at `mcps/agnes`.
+> **代理配置：** 如果 `ALL_PROXY=socks5://...` 导致 `httpx` 报错，请将 `ALL_PROXY` 留空，或使用 HTTP 代理 `HTTP_PROXY=http://127.0.0.1:10808`。或者安装 socks 支持：`pip install "httpx[socks]"`。
 
-### VSCode / Cline / Windsurf / Cherry Studio
+## 🔌 IDE 接入指引
 
-Same stdio server: command=`agnes-2.5-flash-mcp`
-(or `python -m agnes_2_5_flash_mcp.server`), workdir `mcps/agnes`.
+### Cursor / Claude Desktop
+将以下内容添加到您的 `.cursor/mcp.json` 或 `claude_desktop_config.json` 中：
 
-## Tools / 工具一览
+```json
+{
+  "mcpServers": {
+    "agnes-2.5-flash-mcp": {
+      "command": "agnes-2.5-flash-mcp",
+      "env": { "AGNES_API_KEY": "YOUR_KEY" }
+    }
+  }
+}
+```
+*（如果不使用 pip 安装：请使用 `command: "python"`, `args: ["-m", "agnes_2_5_flash_mcp.server"]`, 并指定 `cwd` 目录）*
 
-> Video default is **async**: `create_video` → `query_video`.
-> `generate_video` is compat-only (blocking, may hit client timeouts).
+### Opencode
+请参考项目中的 `opencode.json.example` 文件。
 
-| Tool | Use | Returns |
+## 🛠️ 工具参考 (Tools)
+
+| 工具名称 | 功能描述 | 返回格式 |
 |---|---|---|
-| `generate_image` | 文生图 / 图生图 / 多图合成，**返回 URL** (`save_path` 可选落盘) / text-to-image, image-to-image, compose | `{ url, size, ratio, saved_to }` or `{ b64_json, ... }` |
-| `create_video` | **(RECOMMENDED)** 异步创建视频任务 / async create | `{ video_id, task_id, status }` |
-| `query_video` | 按 `video_id` 轮询进度/结果 / poll by `video_id` | `{ status, progress, video_url?, error? }` |
-| `generate_video` | (compat) 同步阻塞一键生成，仅短视频用 / sync blocking, short clips only | `{ video_url, video_id, ... }` |
+| `generate_image` | 文生图、图生图、图像合成。<br>*(返回 URL，可选保存至本地)* | `{ url, size, ratio, saved_to }` 或 `{ b64_json, ... }` |
+| `create_video` | **(推荐)** 异步创建视频生成任务。 | `{ video_id, task_id, status }` |
+| `query_video` | 根据 `video_id` 轮询视频进度及结果。 | `{ status, progress, video_url?, error? }` |
+| `generate_video` | *(兼容)* 同步阻塞式生成（仅限短视频，可能触发超时）。 | `{ video_url, video_id, ... }` |
 
-Intent routing (no extra layer needed — LLM picks by description):
-- 用户说「agnes生图 / 生成图片 / 做张图 / 文生图 / 图生图」→ `generate_image`
-- 用户说「生视频 / 生成视频 / 做个视频 / 首尾帧 / 参考图视频」→ `create_video` (+`query_video`)
+### 🖼️ 图像约束 (默认：`2K` + `16:9`)
+- **分辨率 (Size)**: `1K` (快速) / `2K` (默认, ≈ 2624x1472) / `3K` / `4K` (最大)
+- **比例 (Ratio)**: `16:9` / `1:1` / `9:16` / `3:4` / `4:3` / `2:3` / `3:2` / `21:9`
+- **能力**: 传入 `images` 参数（URL 或 Data URI）可进行图生图/图像合成，省略则为纯文生图。
 
-### Image spec / 图片规格 (default `2K` + `16:9`)
+### 🎥 视频约束 (本地强校验)
+- **尺寸 (Size)**: 固定为 `720P`。
+- **时长 (Duration)**: `"4"` 至 `"12"` 秒（默认 `"5"`）。
+- **比例 (Ratio)**: `16:9` (默认) / `21:9` / `4:3` / `1:1` / `3:4` / `9:16`。
+- **校验**: 采用严格校验逻辑（如：文本模式禁止包含媒体附件，关键帧模式首尾帧必须 ≥ 1 等）。
 
-- `size`: `1K` (fast/cheap) / `2K` (default, 16:9 ≈ 2624x1472) / `3K` / `4K` (max)
-- `ratio`: `16:9` (default) / `1:1` / `9:16` / `3:4` / `4:3` / `2:3` / `3:2` / `21:9`
-- Pass `images` (public URL or Data URI) for image-to-image / compose; omit for pure text-to-image.
+## 💬 使用示例 (直接对 Agent 说)
 
-### Video constraints / 视频约束 (Flash-only, validated locally)
+- *"用 `generate_image` 生成一张 2K 16:9 的赛博朋克城市夜景壁纸。"*
+- *"把这张图 (URL) 改成雨夜霓虹风格，保持构图，尺寸用 2K。"*
+- *"用 `create_video` 生成 5 秒 16:9 的未来城市街道视频，然后用 `query_video` 帮我轮询结果。"*
 
-- `size` fixed `720P`; `seconds` string `"4"`–`"12"` (default `"5"`); aspect `16:9` (default) / `21:9` / `4:3` / `1:1` / `3:4` / `9:16`
-- `text` forbids all media; `keyframe` needs first/last frame ≥1; `reference` needs `images`(≤5)/`audios`(≤3) ≥1 with `<Picture N>` / `<Audio N>` in prompt; `videos` unsupported
-- `generate_video` default `poll_interval=2s`, `timeout_seconds=600s`; on timeout reuse `video_id` with `query_video`
+## 🧪 本地测试
 
-## Usage examples / 调用示例
-
-- “用 generate_image 生成一张 2K 16:9 的赛博朋克夜景壁纸”
-- “把这张图（URL）改成雨夜霓虹风格，保持构图，size 用 2K”
-- “用 create_video 生成 5 秒 16:9 的未来城市街道视频，再用 query_video 帮我轮询”
-- "Generate a 5s 16:9 future-city video via create_video, then poll with query_video"
-
-## Test / 测试
-
+测试套件 (`tests/test_validation.py`) 是纯本地校验测试，不会产生任何 API 调用计费。
 ```bash
 python -m pytest tests -q
 ```
-
-`tests/test_validation.py` is pure-local (no API cost).
-
----
-
-## 中文说明
-
-本包是 **2.5-flash 专版**：只支持 `agnes-image-2.5-flash` 与
-`agnes-video-2.5-flash`，自带 Flash 强校验（`size must be 720P` /
-`images≤5` / `audios≤3` / `videos不支持`）。视频默认走**异步**
-`create_video` + `query_video`，避免 `generate_video` 阻塞导致
-Cursor/Claude 60s 超时。工具描述首行已内置「生图 / 生视频」中文触发词，
-Agent 会自动选工具，无需额外路由层。
-
-安装 `pip install agnes-2.5-flash-mcp`，Key 写入 MCP 配置
-`environment.AGNES_API_KEY`（见 `opencode.json.example`），重启即生效。
-
-最初就是自己用着方便做的，现在分享出来，希望对你也有用。
